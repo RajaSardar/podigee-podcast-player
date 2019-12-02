@@ -34,7 +34,8 @@ class Theme
       },
       customOptions: @app.customOptions,
       or: @orFunction,
-      externalSubscribeUrl: @externalSubscribeUrlFunction
+      externalSubscribeUrl: @externalSubscribeUrlFunction,
+      locale: @app.i18n.locale
     }
 
   # used in template to fall back to arg2 if arg1 is undefined or null
@@ -144,7 +145,12 @@ class Theme
     @coverImage = @elem.find('.cover-image')
     @subscribeButton = @elem.find('.subscribe-button')
 
-    @subscribeButton.on 'click', () => SubscribeButton.open(@app)
+    @subscribeButton.on 'click', () =>
+      @app.emit('subscribeIntent', 'subscribeButton')
+      SubscribeButton.open(@app)
+
+    @connectionLinks = @elem.find('.podcast-connections-items a')
+    @connectionLinks.on 'click', @handleConnectionClick
 
     @buttons = @elem.find('.buttons')
     @panels = @elem.find('.panels')
@@ -154,6 +160,12 @@ class Theme
   bindCoverLoad: =>
     @coverImage.on 'load', =>
       @app.sendSizeChange()
+
+  handleConnectionClick: (event) =>
+    link = event.currentTarget
+    linkTarget = link.attributes['pp-href'].value
+    service = linkTarget.split('.')[1]
+    @app.emit('subscribeIntent', service)
 
   initializeSpeedToggle: =>
     @speedElement.text('1x')
@@ -183,6 +195,7 @@ class Theme
 
     if extension.name() == @app.options.startPanel
       extension.button.trigger('click')
+      @app.options.startPanel = null
 
     if @app.options.startPanels && @app.options.startPanels.indexOf(extension.name()) != -1
       extension.panel.show()
